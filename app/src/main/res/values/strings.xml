@@ -3,7 +3,7 @@
 
     <string name="FACEBOOK_APP_ID">455731598310249</string>
     <string name="ACCOUNT_KIT_CLIENT_TOKEN">1acd25fdb8382620bb462dbdc48e11d8</string>
-    
+
     <string name="title_activity_home">HomeActivity</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
@@ -21,4 +21,6 @@
 
     <string name="permission_denied">You don\'t have permission to login</string>
     <string name="money_sign">$</string>
+    <string name="action_save">Save</string>
+    <string name="order_detail">Order Detail</string>
 </resources>

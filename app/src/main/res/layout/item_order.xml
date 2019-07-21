@@ -28,7 +28,7 @@
             <TextView
                 android:id="@+id/txt_order_status"
                 android:text="Processing"
-                android:fontFamily="@font/robotomedium"
+                android:fontFamily="@font/magnifika"
                 android:textColor="@color/bt_border_color"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />

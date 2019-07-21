@@ -1,6 +1,7 @@
 package com.comleoneo.myrestaurantstaffapp.Retrofit;
 
 import com.comleoneo.myrestaurantstaffapp.Model.MaxOrderModel;
+import com.comleoneo.myrestaurantstaffapp.Model.OrderDetailModel;
 import com.comleoneo.myrestaurantstaffapp.Model.OrderModel;
 import com.comleoneo.myrestaurantstaffapp.Model.RestaurantOwnerModel;
 import com.comleoneo.myrestaurantstaffapp.Model.UpdateRestaurantOwnerModel;
@@ -33,4 +34,8 @@ public interface IMyRestaurantAPI {
     @GET("maxorderbyrestaurant")
     Observable<MaxOrderModel> getMaxOrder(@Query("key") String key,
                                        @Query("restaurantId") String restaurantId);
+
+    @GET("orderdetailbyrestaurant")
+    Observable<OrderDetailModel> getOrderDetailModel(@Query("key") String key,
+                                                     @Query("orderId") int orderId);
 }

@@ -1,5 +1,6 @@
 package com.comleoneo.myrestaurantstaffapp.Common;
 
+import com.comleoneo.myrestaurantstaffapp.Model.Order;
 import com.comleoneo.myrestaurantstaffapp.Model.RestaurantOwner;
 
 public class Common {
@@ -8,6 +9,7 @@ public class Common {
     public static final String API_KEY = "1234";
 
     public static RestaurantOwner currentRestaurantOwner;
+    public static Order currentOrder;
 
     public static String convertStatusToString(int orderStatus) {
         switch (orderStatus) {
@@ -21,6 +23,15 @@ public class Common {
                 return "Cancelled";
             default:
                 return "Cancelled";
+        }
+    }
+
+    public static int convertStatusToIndex(int orderStatus) {
+        if (orderStatus == -1) {
+            return 3;
+        }
+        else {
+            return orderStatus;
         }
     }
 }

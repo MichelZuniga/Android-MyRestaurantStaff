@@ -1,6 +1,7 @@
 package com.comleoneo.myrestaurantstaffapp.Adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +14,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.comleoneo.myrestaurantstaffapp.Common.Common;
 import com.comleoneo.myrestaurantstaffapp.Interface.ILoadMore;
+import com.comleoneo.myrestaurantstaffapp.Interface.IRecyclerItemClickListener;
 import com.comleoneo.myrestaurantstaffapp.Model.Order;
+import com.comleoneo.myrestaurantstaffapp.OrderDetailActivity;
 import com.comleoneo.myrestaurantstaffapp.R;
 
 import java.text.SimpleDateFormat;
@@ -121,6 +124,11 @@ public class MyOrderAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             } else {
                 myViewHolder.txt_payment_method.setText(new StringBuilder("TransID: ").append(mOrderList.get(position).getTransactionId()));
             }
+
+            myViewHolder.setIRecyclerItemClickListener((view, index) -> {
+                Common.currentOrder = mOrderList.get(position);
+                mContext.startActivity(new Intent(mContext, OrderDetailActivity.class));
+            });
         }
         else if (holder instanceof MyLoadingViewHolder) {
             MyLoadingViewHolder myLoadingViewHolder = (MyLoadingViewHolder) holder;
@@ -134,7 +142,7 @@ public class MyOrderAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return mOrderList.size();
     }
 
-    public class MyViewHolder extends RecyclerView.ViewHolder {
+    public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         @BindView(R.id.txt_order_number)
         TextView txt_order_number;
@@ -153,12 +161,25 @@ public class MyOrderAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         @BindView(R.id.txt_payment_method)
         TextView txt_payment_method;
 
+        private IRecyclerItemClickListener mIRecyclerItemClickListener;
+
+        public void setIRecyclerItemClickListener(IRecyclerItemClickListener IRecyclerItemClickListener) {
+            mIRecyclerItemClickListener = IRecyclerItemClickListener;
+        }
+
         Unbinder mUnbinder;
 
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
 
             mUnbinder = ButterKnife.bind(this, itemView);
+
+            itemView.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View v) {
+            mIRecyclerItemClickListener.onClickListener(v, getAdapterPosition());
         }
     }
 
