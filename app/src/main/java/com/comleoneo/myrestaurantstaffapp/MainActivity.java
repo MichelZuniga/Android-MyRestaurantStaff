@@ -20,6 +20,7 @@ import com.facebook.accountkit.AccountKitLoginResult;
 import com.facebook.accountkit.ui.AccountKitActivity;
 import com.facebook.accountkit.ui.AccountKitConfiguration;
 import com.facebook.accountkit.ui.LoginType;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -78,50 +79,70 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT).show();
             }
             else {
-                AccountKit.getCurrentAccount(new AccountKitCallback<Account>() {
-                    @Override
-                    public void onSuccess(Account account) {
+                FirebaseInstanceId.getInstance()
+                        .getInstanceId()
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(this, "[GET TOKEN]"+e.getMessage(), Toast.LENGTH_SHORT).show();
+                        })
+                        .addOnCompleteListener(task -> {
 
-                        mDialog.show();
+                            AccountKit.getCurrentAccount(new AccountKitCallback<Account>() {
+                                @Override
+                                public void onSuccess(Account account) {
 
-                        mCompositeDisposable.add(mIMyRestaurantAPI.getRestaurantOwner(Common.API_KEY,
-                                account.getId())
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(restaurantOwnerModel -> {
+                                    mDialog.show();
 
-                                    if (restaurantOwnerModel.isSuccess()) {
-                                        // If user already in database
-                                        // Check permission of user
-                                        Common.currentRestaurantOwner = restaurantOwnerModel.getResult().get(0);
-                                        if (Common.currentRestaurantOwner.isStatus()) {
-                                            startActivity(new Intent(MainActivity.this, HomeActivity.class));
-                                            finish();
-                                        }
-                                        else {
-                                            Toast.makeText(MainActivity.this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
-                                        }
+                                    mCompositeDisposable.add(mIMyRestaurantAPI.updateTokenToServer(Common.API_KEY,
+                                            account.getId(),
+                                            task.getResult().getToken())
+                                    .subscribeOn(Schedulers.io())
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe(tokenModel -> {
 
-                                    }
-                                    else {
-                                        // If user is new
-                                        startActivity(new Intent(MainActivity.this, UpdateInformationActivity.class));
-                                        finish();
-                                    }
+                                        mCompositeDisposable.add(mIMyRestaurantAPI.getRestaurantOwner(Common.API_KEY,
+                                                account.getId())
+                                                .subscribeOn(Schedulers.io())
+                                                .observeOn(AndroidSchedulers.mainThread())
+                                                .subscribe(restaurantOwnerModel -> {
 
-                                    mDialog.dismiss();
+                                                    if (restaurantOwnerModel.isSuccess()) {
+                                                        // If user already in database
+                                                        // Check permission of user
+                                                        Common.currentRestaurantOwner = restaurantOwnerModel.getResult().get(0);
+                                                        if (Common.currentRestaurantOwner.isStatus()) {
+                                                            startActivity(new Intent(MainActivity.this, HomeActivity.class));
+                                                            finish();
+                                                        }
+                                                        else {
+                                                            Toast.makeText(MainActivity.this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
+                                                        }
 
-                                }, throwable -> {
-                                    Toast.makeText(MainActivity.this, "[GET USER]"+throwable.getMessage(), Toast.LENGTH_SHORT).show();
-                                }));
+                                                    }
+                                                    else {
+                                                        // If user is new
+                                                        startActivity(new Intent(MainActivity.this, UpdateInformationActivity.class));
+                                                        finish();
+                                                    }
 
-                    }
+                                                    mDialog.dismiss();
 
-                    @Override
-                    public void onError(AccountKitError accountKitError) {
-                        Toast.makeText(MainActivity.this, "[ACCOUNT KIT]"+accountKitError.getErrorType().getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+                                                }, throwable -> {
+                                                    Toast.makeText(MainActivity.this, "[GET USER]"+throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                                                }));
+
+                                    }, throwable -> {
+                                        Toast.makeText(MainActivity.this, "[UPDATE TOKEN]"+throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }));
+
+                                }
+
+                                @Override
+                                public void onError(AccountKitError accountKitError) {
+                                    Toast.makeText(MainActivity.this, "[ACCOUNT KIT]"+accountKitError.getErrorType().getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                        });
             }
         }
     }

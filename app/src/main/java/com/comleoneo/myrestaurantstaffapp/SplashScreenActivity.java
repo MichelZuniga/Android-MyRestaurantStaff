@@ -16,6 +16,7 @@ import com.facebook.accountkit.Account;
 import com.facebook.accountkit.AccountKit;
 import com.facebook.accountkit.AccountKitCallback;
 import com.facebook.accountkit.AccountKitError;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -24,6 +25,7 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
 import dmax.dialog.SpotsDialog;
+import io.paperdb.Paper;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
@@ -55,52 +57,72 @@ public class SplashScreenActivity extends AppCompatActivity {
                     @Override
                     public void onPermissionGranted(PermissionGrantedResponse response) {
 
-                        AccountKit.getCurrentAccount(new AccountKitCallback<Account>() {
-                            @Override
-                            public void onSuccess(Account account) {
+                        FirebaseInstanceId.getInstance()
+                                .getInstanceId()
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(SplashScreenActivity.this, "[GET TOKEN]" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                })
+                                .addOnCompleteListener(task -> {
+                                    if (task.isSuccessful()) {
+                                        AccountKit.getCurrentAccount(new AccountKitCallback<Account>() {
+                                            @Override
+                                            public void onSuccess(Account account) {
 
-                                mDialog.show();
+                                                Paper.book().write(Common.REMEMBER_FBID, account.getId());
 
-                                mCompositeDisposable.add(mIMyRestaurantAPI.getRestaurantOwner(Common.API_KEY, 
-                                        account.getId())
-                                .subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(restaurantOwnerModel -> {
+                                                mDialog.show();
 
-                                    if (restaurantOwnerModel.isSuccess()) {
-                                        // If user already in database
-                                        // Check permission of user
-                                        Common.currentRestaurantOwner = restaurantOwnerModel.getResult().get(0);
-                                        if (Common.currentRestaurantOwner.isStatus()) {
-                                            startActivity(new Intent(SplashScreenActivity.this, HomeActivity.class));
-                                            finish();
-                                        }
-                                        else {
-                                            Toast.makeText(SplashScreenActivity.this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
-                                        }
+                                                mCompositeDisposable.add(mIMyRestaurantAPI.updateTokenToServer(Common.API_KEY,
+                                                        account.getId(),
+                                                        task.getResult().getToken())
+                                                .subscribeOn(Schedulers.io())
+                                                .observeOn(AndroidSchedulers.mainThread())
+                                                .subscribe(tokenModel -> {
 
+                                                    mCompositeDisposable.add(mIMyRestaurantAPI.getRestaurantOwner(Common.API_KEY,
+                                                            account.getId())
+                                                            .subscribeOn(Schedulers.io())
+                                                            .observeOn(AndroidSchedulers.mainThread())
+                                                            .subscribe(restaurantOwnerModel -> {
+
+                                                                if (restaurantOwnerModel.isSuccess()) {
+                                                                    // If user already in database
+                                                                    // Check permission of user
+                                                                    Common.currentRestaurantOwner = restaurantOwnerModel.getResult().get(0);
+                                                                    if (Common.currentRestaurantOwner.isStatus()) {
+                                                                        startActivity(new Intent(SplashScreenActivity.this, HomeActivity.class));
+                                                                        finish();
+                                                                    } else {
+                                                                        Toast.makeText(SplashScreenActivity.this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
+                                                                    }
+
+                                                                } else {
+                                                                    // If user is new
+                                                                    startActivity(new Intent(SplashScreenActivity.this, UpdateInformationActivity.class));
+                                                                    finish();
+                                                                }
+
+                                                                mDialog.dismiss();
+
+                                                            }, throwable -> {
+                                                                Toast.makeText(SplashScreenActivity.this, "[GET USER]" + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                                                            }));
+
+                                                }, throwable -> {
+                                                    Toast.makeText(SplashScreenActivity.this, "[UPDATE TOKEN]", Toast.LENGTH_SHORT).show();
+                                                }));
+
+                                            }
+
+                                            @Override
+                                            public void onError(AccountKitError accountKitError) {
+                                                // If not logged, just ask login
+                                                startActivity(new Intent(SplashScreenActivity.this, MainActivity.class));
+                                                finish();
+                                            }
+                                        });
                                     }
-                                    else {
-                                        // If user is new
-                                        startActivity(new Intent(SplashScreenActivity.this, UpdateInformationActivity.class));
-                                        finish();
-                                    }
-
-                                    mDialog.dismiss();
-
-                                }, throwable -> {
-                                    Toast.makeText(SplashScreenActivity.this, "[GET USER]"+throwable.getMessage(), Toast.LENGTH_SHORT).show();
-                                }));
-
-                            }
-
-                            @Override
-                            public void onError(AccountKitError accountKitError) {
-                                // If not logged, just ask login
-                                startActivity(new Intent(SplashScreenActivity.this, MainActivity.class));
-                                finish();
-                            }
-                        });
+                                });
 
                     }
 
@@ -120,6 +142,7 @@ public class SplashScreenActivity extends AppCompatActivity {
 
     private void init() {
         Log.d(TAG, "init: called!!");
+        Paper.init(this);
         mDialog = new SpotsDialog.Builder().setContext(this).setCancelable(false).build();
         mIMyRestaurantAPI = RetrofitClient.getInstance(Common.API_RESTAURANT_ENDPOINT).create(IMyRestaurantAPI.class);
     }

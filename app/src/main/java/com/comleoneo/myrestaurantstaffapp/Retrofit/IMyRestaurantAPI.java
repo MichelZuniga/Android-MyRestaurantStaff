@@ -4,6 +4,7 @@ import com.comleoneo.myrestaurantstaffapp.Model.MaxOrderModel;
 import com.comleoneo.myrestaurantstaffapp.Model.OrderDetailModel;
 import com.comleoneo.myrestaurantstaffapp.Model.OrderModel;
 import com.comleoneo.myrestaurantstaffapp.Model.RestaurantOwnerModel;
+import com.comleoneo.myrestaurantstaffapp.Model.TokenModel;
 import com.comleoneo.myrestaurantstaffapp.Model.UpdateRestaurantOwnerModel;
 
 import io.reactivex.Observable;
@@ -38,4 +39,15 @@ public interface IMyRestaurantAPI {
     @GET("orderdetailbyrestaurant")
     Observable<OrderDetailModel> getOrderDetailModel(@Query("key") String key,
                                                      @Query("orderId") int orderId);
+
+    @GET("token")
+    Observable<TokenModel> getToken(@Query("key") String key,
+                                    @Query("fbid") String fbid);
+
+    // POST
+    @POST("token")
+    @FormUrlEncoded
+    Observable<TokenModel> updateTokenToServer(@Field("key") String key,
+                                               @Field("fbid") String fbid,
+                                               @Field("token") String token);
 }
